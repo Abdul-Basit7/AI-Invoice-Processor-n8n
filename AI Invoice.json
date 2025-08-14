@@ -1,0 +1,268 @@
+{
+  "name": "AI Invoice",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1408,
+        -160
+      ],
+      "id": "ac031653-cd49-4163-be3e-c3b1e3ed851d",
+      "name": "Telegram Trigger",
+      "webhookId": "28d8fd60-f5d6-4432-a5aa-933e9af6dc1f",
+      "credentials": {
+        "telegramApi": {
+          "id": "UnB7IbiM78HmGdYY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[3].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1184,
+        -160
+      ],
+      "id": "e517c1a5-a7a3-4d40-80ed-34b4f153f2f8",
+      "name": "Get a file",
+      "webhookId": "95bd0bde-bdd4-47d6-bc2d-9228069d5b74",
+      "credentials": {
+        "telegramApi": {
+          "id": "UnB7IbiM78HmGdYY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.result.file_unique_id }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "14-STxf8DIlLGmTeUNcNijjirWMWMlP0l",
+          "mode": "list",
+          "cachedResultName": " Receipt",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/14-STxf8DIlLGmTeUNcNijjirWMWMlP0l"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -960,
+        -256
+      ],
+      "id": "57e7c1e8-8e94-4ad5-9e07-4366c7eb26f6",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Nv3QjgGyBBfmpYaS",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "replyMarkup": "inlineKeyboard",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -64
+      ],
+      "id": "e5ef7471-44f6-4cf1-81f0-f03013cf0e6d",
+      "name": "Send a text message",
+      "webhookId": "f460ff5f-4fc2-4759-bf4f-7af925225b57",
+      "credentials": {
+        "telegramApi": {
+          "id": "UnB7IbiM78HmGdYY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        160
+      ],
+      "id": "16be732c-66a6-41ab-ab8d-4c075610b3f4",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "E3g2ldB1jpkhEbff",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Pakistani receipt analyzer bot. Here's the raw OCR text:\n{{ $json.text }}\n\n---\nSummarise it in a formatted way to be sent to telegram. After each item, use some separator like '---' to avoide mixing of items.\nAll prices are in pakistani rupees and for that use 'Rs.' instead of anyother currency sign.\n\nRespond in plain text, no intro/outro.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        -64
+      ],
+      "id": "937d90dd-b13f-4d08-b4c4-0d7644787fc2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-tesseractjs.tesseractNode",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        -64
+      ],
+      "id": "b2e06509-bbae-49d5-ae89-e83c4275d3f6",
+      "name": "Tesseract"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "00f2d869-dbc4-42f4-8c0e-430a06f82b0c",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -736,
+        -64
+      ],
+      "id": "43c72484-2758-47a2-a236-afe39d701b26",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tesseract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tesseract": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ebdcf707-be65-4150-bb28-c6a41a1f0ff9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0c2c0cf8b217727cb995df939f5b2aea6a545eccb1db85cae7d9c807d91391e3"
+  },
+  "id": "jsJjKxLJAahGOHgm",
+  "tags": []
+}
